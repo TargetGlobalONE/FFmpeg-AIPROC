@@ -11,6 +11,8 @@ To build development version run from the project's directory:
 $ ./configure --disable-optimizations --enable-debug
 $ make
 
+In case using gdb for debugging, please run <prefix>_g executables for these 
+purposes (i.e. ffplay_g, ffmpeg_g, etc.). They contain debugging information.
 
 -------------------------------------------------------------------------------
 

@@ -1759,6 +1759,17 @@ static av_always_inline void encode_mb_internal(MpegEncContext *s, int motion_x,
         }
     }
 
+/* NOTE This is a place in code where DCT coefficients can be modified.  */
+
+/*  
+    for(i=0; i<mb_block_count; i++){
+	int j;
+	for(j=0; j < 64; j++){
+	    s->block[i][j] = 0;
+	}
+    }
+*/
+
     /* huffman encode */
     switch(s->codec_id){ //FIXME funct ptr could be slightly faster
     case CODEC_ID_MPEG1VIDEO:
