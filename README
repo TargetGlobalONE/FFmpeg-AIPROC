@@ -1,3 +1,19 @@
+This is a final course project in Information Security.
+It is a about steganography in video.
+We are modifying ffmpeg for these purposes.
+
+Contribution:
+Pavel Zaichenkov <zaichenkov@gmail.com>
+Arseniy Zaostrovnikh <4necto@gmail.com>
+Rustem Feyzkhanov <ryfeus@gmail.com>
+
+To build development version run from the project's directory:
+$ ./configure --disable-optimizations --enable-debug
+$ make
+
+
+-------------------------------------------------------------------------------
+
 FFmpeg README
 -------------
 
