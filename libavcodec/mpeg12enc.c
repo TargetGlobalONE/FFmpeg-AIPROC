@@ -38,6 +38,8 @@
 #include "libavutil/opt.h"
 #include "libavutil/avassert.h"
 
+#include "secret_enc.c"
+
 static const uint8_t inv_non_linear_qscale[13] = {
     0, 2, 4, 6, 8,
     9,10,11,12,13,14,15,16,
@@ -68,6 +70,14 @@ static uint32_t mpeg1_chr_dc_uni[512];
 
 static uint8_t mpeg1_index_run[2][64];
 static int8_t mpeg1_max_level[2][64];
+
+static struct secret* secret_message = NULL;
+static int secret_size_encoded;
+static char* secret_byte;
+static char secret_offset;
+static int secret_counter;
+static int secret_size_counter;
+static char secret_size_byte;
 
 static void init_uni_ac_vlc(RLTable *rl, uint8_t *uni_ac_vlc_len){
     int i;
@@ -140,6 +150,13 @@ static int find_frame_rate_index(MpegEncContext *s){
 static av_cold int encode_init(AVCodecContext *avctx)
 {
     MpegEncContext *s = avctx->priv_data;
+    secret_message = copy_secret ("secret.txt");
+    secret_size_encoded = 0; 
+    secret_byte = NULL;
+    secret_offset = 0;
+    secret_counter = 0;
+    secret_size_counter = 0;
+    secret_size_byte = 0;
 
     if(MPV_encode_init(avctx) < 0)
         return -1;
@@ -852,10 +869,20 @@ static inline void encode_dc(MpegEncContext *s, int diff, int component)
     } else {
         put_bits(
             &s->pb,
-            mpeg1_chr_dc_uni[diff+255]&0xFF,
+	    mpeg1_chr_dc_uni[diff+255]&0xFF,
             mpeg1_chr_dc_uni[diff+255]>>8);
     }
   }
+}
+
+char get_secret_bit (unsigned char, char);
+char get_secret_bit (unsigned char byte, char offset)
+{
+  int i = offset;
+  unsigned char mask = 128;
+  for (; i != 0; i--)
+    mask >>= 1;
+  return byte & mask;
 }
 
 static void mpeg1_encode_block(MpegEncContext *s,
@@ -882,9 +909,9 @@ static void mpeg1_encode_block(MpegEncContext *s,
         /* encode the first coefficient : needs to be done here because
            it is handled slightly differently */
         level = block[0];
-        if (abs(level) == 1) {
+	if (abs(level) == 1) {
                 code = ((uint32_t)level >> 31); /* the sign bit */
-                put_bits(&s->pb, 2, code | 0x02);
+		put_bits(&s->pb, 2, code | 0x02);
                 i = 1;
         } else {
             i = 0;
@@ -897,43 +924,141 @@ static void mpeg1_encode_block(MpegEncContext *s,
     last_non_zero = i - 1;
 
     for(;i<=last_index;i++) {
-        j = s->intra_scantable.permutated[i];
+	unsigned bound_level = 5;
+	j = s->intra_scantable.permutated[i];
         level = block[j];
-    next_coef:
-        /* encode using VLC */
-        if (level != 0) {
-            run = i - last_non_zero - 1;
-
+next_coef:
+  /*********************************/
+	if (abs(level) > bound_level) {
+	    run = i - last_non_zero - 1;
+	    //av_log (NULL, AV_LOG_INFO, "%d ", run);
             alevel= level;
             MASK_ABS(sign, alevel)
             sign&=1;
+	    if (alevel >= mpeg1_max_level[0][run]) {
+		if (level > 0)
+		    level = mpeg1_max_level[0][run] - 2;
+		else
+		    level = -1 * mpeg1_max_level[0][run] + 2;
+    	    }
+	}
 
-            if (alevel <= mpeg1_max_level[0][run]){
-                code= mpeg1_index_run[0][run] + alevel - 1;
-                /* store the vlc & sign at once */
-                put_bits(&s->pb, table_vlc[code][1]+1, (table_vlc[code][0]<<1) + sign);
-            } else {
-                /* escape seems to be pretty rare <5% so I do not optimize it */
+	if (abs (level) > bound_level) {
+	    char bit;
+	    int tmp_level;
+	    tmp_level = level;
+	    if (!secret_size_encoded) {
+		if (secret_size_counter < 32) {
+		    secret_size_byte = secret_message->size >> ( 24 - (secret_size_counter 
+			- (secret_size_counter % 8)));
+		    secret_byte = &secret_size_byte;
+		    secret_offset = secret_size_counter % 8;
+		}
+		else {
+		    secret_byte = secret_message->data;
+		    secret_size_encoded = 1;
+		    secret_counter = 0;
+		}
+	    }
+	    if (secret_message->size > secret_counter) {
+		bit = get_secret_bit (*secret_byte, secret_offset);
+		//if (bit)
+		//  av_log (NULL, AV_LOG_INFO, "1");
+		//else
+		//  av_log (NULL, AV_LOG_INFO, "0");
+		if ((tmp_level % 2 && !bit) || (!(tmp_level % 2) && bit)) {
+		    if (tmp_level > 0) 
+			tmp_level++;
+		    else 
+			tmp_level--;
+		}
+
+	    } else if (tmp_level % 2 == 1) {
+		if (tmp_level > 0) 
+		    tmp_level++;
+		else 
+		    tmp_level--;
+	    }
+	    run = i - last_non_zero - 1;
+	    alevel = tmp_level;
+	    MASK_ABS(sign, alevel)
+	    sign &= 1;
+	    if (alevel <= mpeg1_max_level[0][run]) {
+		level = tmp_level;
+		if (secret_message->size > secret_counter) {
+		    //if (bit)
+		    //  av_log (NULL, AV_LOG_INFO, "1");
+		    //else
+		    //  av_log (NULL, AV_LOG_INFO, "0");
+		    av_log (NULL, AV_LOG_INFO, "%d:%d:", secret_counter, secret_offset);
+		    secret_offset++;
+		    if (!secret_size_encoded)
+		      secret_size_counter++;
+		    if (secret_offset == 8) {
+			secret_byte++;
+			secret_counter++;
+			secret_offset = 0;
+			//av_log (NULL, AV_LOG_INFO, "<%c>\n", *secret_byte);
+		    }
+		}
+		goto secret_tunnel;
+	    }
+	}
+      /**************************/
+      /* encode using VLC */
+        if (level != 0) {
+            run = i - last_non_zero - 1;
+	    //av_log (NULL, AV_LOG_INFO, "%d ", run);
+            alevel= level;
+            MASK_ABS(sign, alevel)
+            sign&=1;
+	    if (alevel <= mpeg1_max_level[0][run]){
+secret_tunnel:
+		code= mpeg1_index_run[0][run] + alevel - 1;
+                /*} store the vlc & sign at once */
+		//av_log (NULL, AV_LOG_INFO, "%d -> %d:%d\n",
+		//alevel,
+		//table_vlc[code][1]+1,(table_vlc[code][0]<<1)+sign, alevel);
+		put_bits(&s->pb, table_vlc[code][1]+1, (table_vlc[code][0]<<1) + sign);	
+
+		if (abs(level) > 5)
+		  av_log (NULL, AV_LOG_INFO, "%d\n", level);
+		fflush (stdout);
+		//av_log (NULL, LOG_AV_INFO, "%x \n", (table_vlc[code][0] << 1) +
+		//sign);
+	    } else  {
+		if (abs(level) > 5)
+		  av_log (NULL, AV_LOG_INFO, "%d*\n", level);
+
+/* escape seems to be pretty rare <5% so I do not optimize it */
+		//av_log (NULL, AV_LOG_INFO, "%d -> <%d:%d>\n", alevel, table_vlc[111][1], table_vlc[111][0]);
                 put_bits(&s->pb, table_vlc[111][1], table_vlc[111][0]);
-                /* escape: only clip in this case */
+		/* escape: only clip in this case */
+		//av_log (NULL, AV_LOG_INFO, "<%d:%d>\n", 6, run);
                 put_bits(&s->pb, 6, run);
                 if(s->codec_id == CODEC_ID_MPEG1VIDEO){
                     if (alevel < 128) {
+			//av_log (NULL, AV_LOG_INFO, "<%d:%d>\n", 8, run & ((1 << 8) - 1));
                         put_sbits(&s->pb, 8, level);
                     } else {
                         if (level < 0) {
-                            put_bits(&s->pb, 16, 0x8001 + level + 255);
+			    //av_log (NULL, AV_LOG_INFO, "<%d:%d>\n", 16, 0x8001 + level + 255);
+			    put_bits(&s->pb, 16, 0x8001 + level + 255);
                         } else {
+			    //av_log (NULL, AV_LOG_INFO, "<%d:%d>\n", 16, level & ((1 << 16) - 1));
                             put_sbits(&s->pb, 16, level);
                         }
                     }
                 }else{
+		    //av_log (NULL, AV_LOG_INFO, "<%d:%d>\n", 12, level & ((1 << 12) - 1));
                     put_sbits(&s->pb, 12, level);
                 }
             }
             last_non_zero = i;
         }
+      //av_log(NULL, AV_LOG_INFO, "\n");
     }
+    //av_log(NULL, AV_LOG_INFO, "eob\n");
     /* end of block */
     put_bits(&s->pb, table_vlc[112][1], table_vlc[112][0]);
 }

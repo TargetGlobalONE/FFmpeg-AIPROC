@@ -40,6 +40,8 @@
 #include "xvmc_internal.h"
 #include "thread.h"
 
+
+#include <math.h>
 //#undef NDEBUG
 //#include <assert.h>
 
@@ -741,6 +743,8 @@ static int mpeg_decode_mb(MpegEncContext *s, DCTELEM block[12][64])
     const int mb_block_count = 4 + (1 << s->chroma_format);
 
     av_dlog(s->avctx, "decode_mb: x=%d y=%d\n", s->mb_x, s->mb_y);
+
+    
 
     assert(s->mb_skipped == 0);
 
@@ -1760,7 +1764,6 @@ static int mpeg_decode_slice(Mpeg1Context *s1, int mb_y,
                     s->q_scale_type, s->intra_vlc_format, s->repeat_first_field, s->chroma_420_type ? "420" :"");
         }
     }
-
     for (;;) {
         // If 1, we memcpy blocks in xvmcvideo.
         if (CONFIG_MPEG_XVMC_DECODER && s->avctx->xvmc_acceleration > 1)
@@ -1828,7 +1831,6 @@ static int mpeg_decode_slice(Mpeg1Context *s1, int mb_y,
                 } else
                     goto eos;
             }
-
             ff_init_block_index(s);
         }
 

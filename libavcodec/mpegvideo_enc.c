@@ -1402,6 +1402,9 @@ vbv_retry:
     }
     assert((s->frame_bits&7)==0);
 
+
+
+
     return s->frame_bits/8;
 }
 
@@ -1739,6 +1742,7 @@ static av_always_inline void encode_mb_internal(MpegEncContext *s, int motion_x,
         }
     }
 
+
     if((s->flags&CODEC_FLAG_GRAY) && s->mb_intra){
         s->block_last_index[4]=
         s->block_last_index[5]= 0;
@@ -1758,17 +1762,6 @@ static av_always_inline void encode_mb_internal(MpegEncContext *s, int motion_x,
             }
         }
     }
-
-/* NOTE This is a place in code where DCT coefficients can be modified.  */
-
-/*  
-    for(i=0; i<mb_block_count; i++){
-	int j;
-	for(j=0; j < 64; j++){
-	    s->block[i][j] = 0;
-	}
-    }
-*/
 
     /* huffman encode */
     switch(s->codec_id){ //FIXME funct ptr could be slightly faster
@@ -1811,6 +1804,10 @@ static av_always_inline void encode_mb_internal(MpegEncContext *s, int motion_x,
     default:
         assert(0);
     }
+
+
+
+
 }
 
 static av_always_inline void encode_mb(MpegEncContext *s, int motion_x, int motion_y)

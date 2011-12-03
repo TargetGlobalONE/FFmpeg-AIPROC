@@ -166,7 +166,7 @@ const char* av_default_item_name(void* ctx);
  * Also to receive the last, "last repeated" line if any, the user app must
  * call av_log(NULL, AV_LOG_QUIET, "%s", ""); at the end
  */
-#define AV_LOG_SKIP_REPEATED 1
+#define AV_LOG_SKIP_REPEATED 0
 void av_log_set_flags(int arg);
 
 #endif /* AVUTIL_LOG_H */

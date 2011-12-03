@@ -136,7 +136,15 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
     bit_buf = s->bit_buf;
     bit_left = s->bit_left;
 
+    if (value == 40 || value == 41 || value == 46 || value == 47)
+      {
+   //     av_log (NULL, AV_LOG_INFO, "put_bits=%d %x\n", n, value);
+
+      }
+
     //    printf("n=%d value=%x cnt=%d buf=%x\n", n, value, bit_cnt, bit_buf);
+    //av_log (NULL, LOG_AV_INFO, "n=%d value=%x cnd%d buf%x\n", n, value,bit_cnt,
+    //bit_buf);
     /* XXX: optimize */
 #ifdef BITSTREAM_WRITER_LE
     bit_buf |= value << (32 - bit_left);
