@@ -114,7 +114,7 @@ static const OptionDef options[];
 
 static int frame_bits_per_raw_sample = 0;
 static int video_discard = 0;
-static int same_quant = 0;
+static int same_quant = 0; 
 static int do_deinterlace = 0;
 static int intra_dc_precision = 8;
 static int loop_input = 0;

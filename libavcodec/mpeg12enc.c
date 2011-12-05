@@ -78,6 +78,7 @@ static char secret_offset;
 static int secret_counter;
 static int secret_size_counter;
 static char secret_size_byte;
+static unsigned long long total_length;
 
 static void init_uni_ac_vlc(RLTable *rl, uint8_t *uni_ac_vlc_len){
     int i;
@@ -157,7 +158,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
     secret_counter = 0;
     secret_size_counter = 0;
     secret_size_byte = 0;
-
+    total_length = 0;
     if(MPV_encode_init(avctx) < 0)
         return -1;
 
@@ -878,11 +879,15 @@ static inline void encode_dc(MpegEncContext *s, int diff, int component)
 char get_secret_bit (unsigned char, char);
 char get_secret_bit (unsigned char byte, char offset)
 {
-  int i = offset;
+  int i;
   unsigned char mask = 128;
-  for (; i != 0; i--)
+  for (i = offset; i != 0; i--)
     mask >>= 1;
-  return byte & mask;
+  byte &= mask;
+  if (byte > 0)
+    return 1;
+  else
+    return 0;
 }
 
 static void mpeg1_encode_block(MpegEncContext *s,
@@ -924,22 +929,30 @@ static void mpeg1_encode_block(MpegEncContext *s,
     last_non_zero = i - 1;
 
     for(;i<=last_index;i++) {
-	unsigned bound_level = 5;
+	unsigned bound_level;
+	unsigned bits_num;
+	int enable_log;
 	j = s->intra_scantable.permutated[i];
         level = block[j];
 next_coef:
   /*********************************/
+	/* Lower boundary. [4..64].  */
+	bound_level = 5;
+	/* Encoded bits per level {1, 2}.  */
+	bits_num = 2;
+	/* Enable logging. */
+	enable_log = 0;
 	if (abs(level) > bound_level) {
 	    run = i - last_non_zero - 1;
 	    //av_log (NULL, AV_LOG_INFO, "%d ", run);
             alevel= level;
             MASK_ABS(sign, alevel)
             sign&=1;
-	    if (alevel >= mpeg1_max_level[0][run]) {
+	    if ((alevel + ((bits_num + 1) * 2)) >= mpeg1_max_level[0][run]) {
 		if (level > 0)
-		    level = mpeg1_max_level[0][run] - 2;
+		    level = mpeg1_max_level[0][run] - ((bits_num + 1) * 2);
 		else
-		    level = -1 * mpeg1_max_level[0][run] + 2;
+		    level = -1 * mpeg1_max_level[0][run] + ((bits_num + 1) * 2);
     	    }
 	}
 
@@ -961,24 +974,52 @@ next_coef:
 		}
 	    }
 	    if (secret_message->size > secret_counter) {
-		bit = get_secret_bit (*secret_byte, secret_offset);
-		//if (bit)
-		//  av_log (NULL, AV_LOG_INFO, "1");
-		//else
-		//  av_log (NULL, AV_LOG_INFO, "0");
-		if ((tmp_level % 2 && !bit) || (!(tmp_level % 2) && bit)) {
-		    if (tmp_level > 0) 
-			tmp_level++;
-		    else 
-			tmp_level--;
-		}
+		int i;
+		unsigned mask = 1;
+		char* tmp_secret_byte = secret_byte;
+		char tmp_secret_offset = secret_offset;
+		char addition = 0;
+		for (i = 0; i < bits_num-1; i++)
+		    mask <<= 1;
 
+		while (tmp_level % (bits_num * 2))
+		  {
+		    if (tmp_level > 0)
+		      tmp_level++;
+		    else
+		      tmp_level--;
+		  }
+		for (i = 0; i < bits_num; i++) {
+		    bit = get_secret_bit (*tmp_secret_byte, tmp_secret_offset);
+		    //if (bit)
+		    //  av_log (NULL, AV_LOG_INFO, "1");
+		    //else
+		    //  av_log (NULL, AV_LOG_INFO, "0");
+		     
+		    if (bit)
+		      addition += mask;
+		    //if ((!(mask & abs(tmp_level)) && bit) || ((mask & abs(tmp_level)) && !bit))
+		    //	addition += mask;
+		    
+		    mask >>= 1;
+		    tmp_secret_offset++;
+		    if (tmp_secret_offset == 8) {
+			tmp_secret_byte++;
+			tmp_secret_offset = 0;
+		    }
+		}
+		if (tmp_level > 0)
+		    tmp_level += addition;
+		else
+		    tmp_level -= addition;
+	    }
+	    /*
 	    } else if (tmp_level % 2 == 1) {
 		if (tmp_level > 0) 
 		    tmp_level++;
 		else 
 		    tmp_level--;
-	    }
+	    }*/
 	    run = i - last_non_zero - 1;
 	    alevel = tmp_level;
 	    MASK_ABS(sign, alevel)
@@ -990,10 +1031,11 @@ next_coef:
 		    //  av_log (NULL, AV_LOG_INFO, "1");
 		    //else
 		    //  av_log (NULL, AV_LOG_INFO, "0");
-		    av_log (NULL, AV_LOG_INFO, "%d:%d:", secret_counter, secret_offset);
-		    secret_offset++;
+		    if (enable_log)
+			av_log (NULL, AV_LOG_INFO, "%d:%d:", secret_counter, secret_offset);
+		    secret_offset += bits_num;
 		    if (!secret_size_encoded)
-		      secret_size_counter++;
+		      secret_size_counter += bits_num;
 		    if (secret_offset == 8) {
 			secret_byte++;
 			secret_counter++;
@@ -1020,16 +1062,19 @@ secret_tunnel:
 		//alevel,
 		//table_vlc[code][1]+1,(table_vlc[code][0]<<1)+sign, alevel);
 		put_bits(&s->pb, table_vlc[code][1]+1, (table_vlc[code][0]<<1) + sign);	
-
-		if (abs(level) > 5)
-		  av_log (NULL, AV_LOG_INFO, "%d\n", level);
+		total_length++;
+		if (abs(level) > bound_level) {
+		    if (enable_log)
+			av_log (NULL, AV_LOG_INFO, "%d\n", level);
+		}
 		fflush (stdout);
 		//av_log (NULL, LOG_AV_INFO, "%x \n", (table_vlc[code][0] << 1) +
 		//sign);
 	    } else  {
-		if (abs(level) > 5)
-		  av_log (NULL, AV_LOG_INFO, "%d*\n", level);
-
+		if (abs(level) > bound_level) {
+		    if (enable_log)
+		      av_log (NULL, AV_LOG_INFO, "%d*\n", level);
+		}
 /* escape seems to be pretty rare <5% so I do not optimize it */
 		//av_log (NULL, AV_LOG_INFO, "%d -> <%d:%d>\n", alevel, table_vlc[111][1], table_vlc[111][0]);
                 put_bits(&s->pb, table_vlc[111][1], table_vlc[111][0]);
