@@ -478,6 +478,20 @@ void free_vlc(VLC *vlc);
         SKIP_BITS(name, gb, n);                                 \
     } while (0)
 
+
+#ifdef STEGANOGRAPHY_STREAM
+void steganography_process_level (int level);
+#define STEGANOGRAPHY_PROCESS_LEVEL(level)								\
+/*	if(level > 14 && level != 127)		*/								\
+	{																	\
+		steganography_process_level (level);							\
+		/*av_log (NULL, AV_LOG_INFO, "(%d)", __LINE__); 		*/		\
+	/*	av_log (NULL, AV_LOG_INFO, "%d\n", level);   			*/		\
+	}
+#else
+#define STEGANOGRAPHY_PROCESS_LEVEL(level) /* just stub */
+#endif
+
 #define GET_RL_VLC(level, run, name, gb, table, bits, max_depth, need_update) do { \
         int n, nb_bits;                                                 \
         unsigned int index;                                             \
@@ -485,7 +499,7 @@ void free_vlc(VLC *vlc);
         index = SHOW_UBITS(name, gb, bits);                             \
         level = table[index].level;                                     \
         n     = table[index].len;                                       \
-                                                                        \
+/* av_log (NULL, AV_LOG_INFO, "%d:%d", bits, index);                            */                                           \
         if (max_depth > 1 && n < 0) {                                   \
             SKIP_BITS(name, gb, bits);                                  \
             if (need_update) {                                          \
@@ -497,9 +511,11 @@ void free_vlc(VLC *vlc);
             index = SHOW_UBITS(name, gb, nb_bits) + level;              \
             level = table[index].level;                                 \
             n     = table[index].len;                                   \
+/* av_log (NULL, AV_LOG_INFO, ";%d:%d", bits, index);                            */                                           \
         }                                                               \
         run = table[index].run;                                         \
         SKIP_BITS(name, gb, n);                                         \
+		STEGANOGRAPHY_PROCESS_LEVEL(level)								\
     } while (0)
 
 

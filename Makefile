@@ -1,6 +1,9 @@
 MAIN_MAKEFILE=1
 include config.mak
 
+ADDITIONAL_FLAGS_GIVEN_BY_CMDLINE=
+CFLAGS := $(CFLAGS) $(ADDITIONAL_FLAGS_GIVEN_BY_CMDLINE)
+
 vpath %.c    $(SRC_PATH)
 vpath %.cpp  $(SRC_PATH)
 vpath %.h    $(SRC_PATH)

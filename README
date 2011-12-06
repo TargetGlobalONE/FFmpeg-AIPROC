@@ -39,7 +39,7 @@ A destination video *must* be wih 'mpg' extension.
 
 ############## DECODER ############## 
 in order to build myplay steganography decoder command:
-$ rm libavcodec/libavcodec.a
+$ make clean
 $ sh myplay-make.sh
 
 to use it write:
@@ -52,6 +52,9 @@ Valuable macro-constants in the file mplay.c:
 NUMBER_BITS_PER_LEVEL  -- number of bits, encoded in each apropriate level
 LEVEL_TRESHOLD 	       -- treshold, used to determind apropriate levels
 LOG_ENABLE             -- enable/disable logging unimportant stuff, put 0
+
+in order to update myplay binary file, after changing a constant, write just:
+$ sh myplay-make.sh
 
 -------------------------------------------------------------------------------
 
