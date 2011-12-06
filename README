@@ -7,13 +7,35 @@ Pavel Zaichenkov <zaichenkov@gmail.com>
 Arseniy Zaostrovnikh <4necto@gmail.com>
 Rustem Feyzkhanov <ryfeus@gmail.com>
 
+####### FFMPEG BUNDLE INSTALL #######
 To build development version run from the project's directory:
 $ ./configure --disable-optimizations --enable-debug
-$ make
+$ make ffmpeg
 
 In case using gdb for debugging, please run <prefix>_g executables for these 
 purposes (i.e. ffplay_g, ffmpeg_g, etc.). They contain debugging information.
 
+############## ENCODER ##############
+Steganography encoder is implemented in file 'libavcodec/mpeg12enc.c' (only
+MPEG1 version is implemented by now.
+------------------------------------
+Encoding parameters are defined in lines 74-79.
+
+bound_level -- level's lower boundary in range about of [4..64].
+bits_num    -- number of *encoded* bits in a byte. Range {1, 2}.
+enable_log  -- enable/disable logging.
+
+The default ffmpeg is used for encoding. Typical command looks like
+
+./ffmpeg -i source.avi dest.mpg	      <-- to encode in default quality
+
+A usefult options is '-sameq' as well. Then the destination video is encoded in
+original quality.
+
+./ffmpeg -i source.avi -sameq dest.mpg
+------------------------------------
+A secret message is stored in file 'secret.txt'.
+A destination video *must* be wih 'mpg' extension.
 
 ############## DECODER ############## 
 in order to build myplay steganography decoder command:

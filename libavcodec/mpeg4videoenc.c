@@ -26,6 +26,8 @@
 #include "h263.h"
 #include "mpeg4video.h"
 
+//#include "secret_enc.c"
+
 //The uni_DCtab_* tables below contain unified bits+length tables to encode DC
 //differences in mpeg4. Unified in the sense that the specification specifies
 //this encoding in several steps.
@@ -53,6 +55,15 @@ intra
 max level: 53/16
 max run: 29/41
 */
+
+static struct secret* secret_message = NULL;
+static int secret_size_encoded;
+static char* secret_byte;
+static char secret_offset;
+static int secret_counter;
+static int secret_size_counter;
+static char secret_size_byte;
+static unsigned long long total_length;
 
 
 /**
@@ -290,6 +301,22 @@ static inline int mpeg4_get_dc_length(int level, int n){
     }
 }
 
+#if 0
+char get_secret_bit (unsigned char, char);
+char get_secret_bit (unsigned char byte, char offset)
+{
+  int i;
+  unsigned char mask = 128;
+  for (i = offset; i != 0; i--)
+    mask >>= 1;
+  byte &= mask;
+  if (byte > 0)
+    return 1;
+  else
+    return 0;
+}
+#endif
+
 /**
  * encodes a 8x8 block
  * @param n block index (0-3 are luma, 4-5 are chroma)
@@ -317,8 +344,7 @@ static inline void mpeg4_encode_block(MpegEncContext * s, DCTELEM * block, int n
     }
 
     /* AC coefs */
-    last_non_zero = i - 1;
-    for (; i < last_index; i++) {
+    last_non_zero = i - 1;    for (; i < last_index; i++) {
         int level = block[ scan_table[i] ];
         if (level) {
             int run = i - last_non_zero - 1;
@@ -1191,6 +1217,14 @@ static av_cold int encode_init(AVCodecContext *avctx)
     MpegEncContext *s = avctx->priv_data;
     int ret;
     static int done = 0;
+
+   // secret_message = copy_secret ("secret.txt");
+    secret_size_encoded = 0;
+    secret_byte = NULL;
+    secret_offset = 0;
+    secret_size_counter = 0;
+    secret_size_byte = 0;
+    total_length = 0;
 
     if((ret=MPV_encode_init(avctx)) < 0)
         return ret;

@@ -71,6 +71,13 @@ static uint32_t mpeg1_chr_dc_uni[512];
 static uint8_t mpeg1_index_run[2][64];
 static int8_t mpeg1_max_level[2][64];
 
+/* Lower boundary. [4..64].  */
+static const unsigned bound_level = 5;
+/* Encoded bits per level {1, 2}.  */
+static const unsigned bits_num = 2;
+/* Enable logging. */
+static const char enable_log = 0;
+
 static struct secret* secret_message = NULL;
 static int secret_size_encoded;
 static char* secret_byte;
@@ -929,19 +936,11 @@ static void mpeg1_encode_block(MpegEncContext *s,
     last_non_zero = i - 1;
 
     for(;i<=last_index;i++) {
-	unsigned bound_level;
-	unsigned bits_num;
-	int enable_log;
+
 	j = s->intra_scantable.permutated[i];
         level = block[j];
 next_coef:
   /*********************************/
-	/* Lower boundary. [4..64].  */
-	bound_level = 5;
-	/* Encoded bits per level {1, 2}.  */
-	bits_num = 2;
-	/* Enable logging. */
-	enable_log = 0;
 	if (abs(level) > bound_level) {
 	    run = i - last_non_zero - 1;
 	    //av_log (NULL, AV_LOG_INFO, "%d ", run);
