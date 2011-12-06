@@ -14,6 +14,23 @@ $ make
 In case using gdb for debugging, please run <prefix>_g executables for these 
 purposes (i.e. ffplay_g, ffmpeg_g, etc.). They contain debugging information.
 
+
+############## DECODER ############## 
+in order to build myplay steganography decoder command:
+$ rm libavcodec/libavcodec.a
+$ sh myplay-make.sh
+
+to use it write:
+$./myplay <"your coded video file"> 2> <"your log file">
+
+After that, there will be created file buga.t containing all coded information.
+log file will contain additional information
+
+Valuable macro-constants in the file mplay.c:
+NUMBER_BITS_PER_LEVEL  -- number of bits, encoded in each apropriate level
+LEVEL_TRESHOLD 	       -- treshold, used to determind apropriate levels
+LOG_ENABLE             -- enable/disable logging unimportant stuff, put 0
+
 -------------------------------------------------------------------------------
 
 FFmpeg README
