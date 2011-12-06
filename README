@@ -17,7 +17,7 @@ purposes (i.e. ffplay_g, ffmpeg_g, etc.). They contain debugging information.
 
 ############## ENCODER ##############
 Steganography encoder is implemented in file 'libavcodec/mpeg12enc.c' (only
-MPEG1 version is implemented by now.
+MPEG1 version is implemented by now.)
 ------------------------------------
 Encoding parameters are defined in lines 74-79.
 
