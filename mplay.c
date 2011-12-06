@@ -191,7 +191,7 @@ void na4uHai_Ywe_koduTj()
 						fclose(fopen ("buga.t", "w"));
 }
 
-static void log (const char * format, ...)
+static void Log (const char * format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -219,14 +219,14 @@ static void draw_byte()
 	if (byte_number < 5)
 	{
 		message_length |= ((unsigned int)byte__<<(8*(4 - byte_number)));
-		log ("[%u:", message_length);
-		log ("%u]\n", byte__);
+		Log ("[%u:", message_length);
+		Log ("%u]\n", byte__);
 	}
 	if (byte_number > 4 && byte_number <= (message_length + 4))
 	{
 		FILE* fi = fopen ("buga.t", "a");
 		fwrite(&byte__, 1, 1, fi);
-		log ("[byte: %c]\n", byte__);
+		Log ("[byte: %c]\n", byte__);
 		fclose(fi);
 	}
 }
@@ -250,14 +250,14 @@ void push_bit (int bit)
 void pack_byte (int level)
 {
 	int mask = 1<<(NUMBER_BITS_PER_LEVEL - 1);
-	log ("%d->", level);
+	Log ("%d->", level);
 	while (mask > 0)
 	{
 		push_bit ((level&mask) != 0);
-		log ("%d", (level&mask)!=0);
+		Log ("%d", (level&mask)!=0);
 		mask >>= 1;
 	}
-	log ("\n");
+	Log ("\n");
 }
 
 void steganography_process_level (int level)
