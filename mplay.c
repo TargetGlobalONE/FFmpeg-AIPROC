@@ -20,6 +20,7 @@
 #define NUMBER_BITS_PER_LEVEL 2
 #define LEVEL_TRESHOLD 5
 #define LOG_ENABLE 1
+#define STOP_ON_FINISH 1
 
 
 const char program_name[] = "stripped ffplay";
@@ -210,7 +211,8 @@ static void finish_decode()
 {
 	//fclose(fi);
 	
-	av_log (NULL, AV_LOG_INFO, "capable size of information: %d\n", byte_number);
+	if (!STOP_ON_FINISH)
+		av_log (NULL, AV_LOG_INFO, "capable size of information: %d\n", byte_number);
 }
 
 static void draw_byte()
@@ -315,8 +317,6 @@ static int read_thread (VideoState *is)
     st_index = av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     av_dump_format(ic, 0, is->filename, 0);
 
-//FILE* fi = fopen ("buga.t", "w");
-//fclose (fi);
 	na4uHai_Ywe_koduTj();
 
     ret=-1;
@@ -343,6 +343,9 @@ static int read_thread (VideoState *is)
         if (pkt->stream_index == is->video_stream)
 			work_with_video_pkt(is, pkt);
        	av_free_packet(pkt);
+
+		if ((byte_number + 4) >= message_length && STOP_ON_FINISH)
+			break;
 	}
 	finish_decode();
 
@@ -386,7 +389,6 @@ int main(int argc, char **argv)
 
     /* register all codecs, demux and protocols */
     avcodec_register_all();
-    avdevice_register_all();
     avfilter_register_all();
     av_register_all();
 
