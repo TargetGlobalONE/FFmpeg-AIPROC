@@ -389,7 +389,6 @@ int main(int argc, char **argv)
 
     /* register all codecs, demux and protocols */
     avcodec_register_all();
-    avfilter_register_all();
     av_register_all();
 
 	if (argc < 2)
