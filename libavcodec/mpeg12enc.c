@@ -72,11 +72,15 @@ static uint8_t mpeg1_index_run[2][64];
 static int8_t mpeg1_max_level[2][64];
 
 /* Lower boundary. [4..64].  */
+#ifdef BOUNDARY
+static const unsigned bound_level = BOUNDARY;
+#else
 static const unsigned bound_level = 5;
+#endif
 /* Encoded bits per level {1, 2}.  */
 static const unsigned bits_num = 2;
 /* Enable logging. */
-static const char enable_log = 0;
+static const char enable_log = 1;
 
 static struct secret* secret_message = NULL;
 static int secret_size_encoded;
@@ -1031,7 +1035,7 @@ next_coef:
 		    //else
 		    //  av_log (NULL, AV_LOG_INFO, "0");
 		    if (enable_log)
-			av_log (NULL, AV_LOG_INFO, "%d:%d:", secret_counter, secret_offset);
+			av_log (NULL, AV_LOG_INFO, "%d\n", secret_counter);
 		    secret_offset += bits_num;
 		    if (!secret_size_encoded)
 		      secret_size_counter += bits_num;
@@ -1063,8 +1067,8 @@ secret_tunnel:
 		put_bits(&s->pb, table_vlc[code][1]+1, (table_vlc[code][0]<<1) + sign);	
 		total_length++;
 		if (abs(level) > bound_level) {
-		    if (enable_log)
-			av_log (NULL, AV_LOG_INFO, "%d\n", level);
+		  //  if (enable_log)
+		//	av_log (NULL, AV_LOG_INFO, "%d\n", level);
 		}
 		fflush (stdout);
 		//av_log (NULL, LOG_AV_INFO, "%x \n", (table_vlc[code][0] << 1) +
