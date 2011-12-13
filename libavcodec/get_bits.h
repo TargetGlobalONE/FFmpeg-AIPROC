@@ -481,8 +481,10 @@ void free_vlc(VLC *vlc);
 
 #ifdef STEGANOGRAPHY_STREAM
 void steganography_process_level (int level);
+extern int steganography_enable_level_processing;
 #define STEGANOGRAPHY_PROCESS_LEVEL(level)								\
 /*	if(level > 14 && level != 127)		*/								\
+/*	if (steganography_enable_level_processing)	*/						\
 	{																	\
 		steganography_process_level (level);							\
 		/*av_log (NULL, AV_LOG_INFO, "(%d)", __LINE__); 		*/		\

@@ -180,6 +180,7 @@ int byte_number = 0;
 int bit_number = 0;
 unsigned char byte__ = 0;
 unsigned int message_length = 0;
+extern int steganography_enable_level_processing;
 
 void na4uHai_Ywe_koduTj(void);
 void na4uHai_Ywe_koduTj()
@@ -253,12 +254,16 @@ void pack_byte (int level)
 {
 	int mask = 1<<(NUMBER_BITS_PER_LEVEL - 1);
 	Log ("%d->", level);
-	while (mask > 0)
-	{
-		push_bit ((level&mask) != 0);
-		Log ("%d", (level&mask)!=0);
-		mask >>= 1;
-	}
+	if (steganography_enable_level_processing)
+		while (mask > 0)
+		{
+			Log ("%d", (level&mask)!=0);
+			push_bit ((level&mask) != 0);
+			mask >>= 1;
+		}
+	else
+		Log ("interdit");
+
 	Log ("\n");
 }
 
