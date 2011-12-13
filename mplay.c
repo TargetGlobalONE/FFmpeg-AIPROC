@@ -228,7 +228,7 @@ static void draw_byte()
 	{
 		FILE* fi = fopen ("buga.t", "a");
 		fwrite(&byte__, 1, 1, fi);
-		Log ("[byte: %c]\n", byte__);
+		Log ("[byte[%d]: %c]\n", byte_number, byte__);
 		fclose(fi);
 	}
 }
