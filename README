@@ -39,7 +39,7 @@ A destination video *must* be wih 'mpg' extension.
 
 ############## DECODER ############## 
 in order to build myplay steganography decoder command:
-$ make clean
+$ touch libavcodec/get_bits.h
 $ sh myplay-make.sh
 
 to use it write:
