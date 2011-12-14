@@ -831,9 +831,7 @@ int ff_mpeg4_decode_partitions(MpegEncContext *s)
     return 0;
 }
 
-#ifdef STEGANOGRAPHY_STREAM
 int steganography_enable_level_processing = 1;
-#endif
 
 /**
  * decodes a block.
@@ -1030,7 +1028,7 @@ static inline int mpeg4_decode_block(MpegEncContext * s, DCTELEM * block,
                 } else {
                     /* second escape */
                     SKIP_BITS(re, &s->gb, 2);
-					steganography_enable_level_processing = 0;
+					steganography_enable_level_processing = 1;
                     GET_RL_VLC(level, run, re, &s->gb, rl_vlc, TEX_VLC_BITS, 2, 1);
                     i+= run + rl->max_run[run>>7][level/qmul] +1; //FIXME opt indexing
                     level = (level ^ SHOW_SBITS(re, &s->gb, 1)) - SHOW_SBITS(re, &s->gb, 1);

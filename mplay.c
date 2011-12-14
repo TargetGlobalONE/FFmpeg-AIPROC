@@ -20,7 +20,7 @@
 #define NUMBER_BITS_PER_LEVEL 2
 #define LEVEL_TRESHOLD 5
 #define LOG_ENABLE 1
-#define STOP_ON_FINISH 1
+#define STOP_ON_FINISH 0
 
 
 const char program_name[] = "stripped ffplay";
