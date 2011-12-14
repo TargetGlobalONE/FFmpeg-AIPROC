@@ -18,7 +18,7 @@
 
 
 #define NUMBER_BITS_PER_LEVEL 2
-#define LEVEL_TRESHOLD 5
+#define LEVEL_TRESHOLD 4
 #define LOG_ENABLE 1
 #define STOP_ON_FINISH 0
 
@@ -181,6 +181,7 @@ int bit_number = 0;
 unsigned char byte__ = 0;
 unsigned int message_length = 0;
 extern int steganography_enable_level_processing;
+FILE* fi = 0;
 
 void na4uHai_Ywe_koduTj(void);
 void na4uHai_Ywe_koduTj()
@@ -191,6 +192,8 @@ void na4uHai_Ywe_koduTj()
 	byte__ = 0;
 	message_length = 0;
 						fclose(fopen ("buga.t", "w"));
+	fi = fopen ("buga.t", "a");
+
 }
 
 static void Log (const char * format, ...)
@@ -210,7 +213,7 @@ static void Log (const char * format, ...)
 
 static void finish_decode()
 {
-	//fclose(fi);
+	fclose(fi);
 	
 	if (!STOP_ON_FINISH)
 		av_log (NULL, AV_LOG_INFO, "capable size of information: %d\n", byte_number);
@@ -227,10 +230,10 @@ static void draw_byte()
 	}
 	if (byte_number > 4 && byte_number <= (message_length + 4))
 	{
-		FILE* fi = fopen ("buga.t", "a");
+//		FILE* fi = fopen ("buga.t", "a");
 		fwrite(&byte__, 1, 1, fi);
 		Log ("[byte[%d]: %c]\n", byte_number, byte__);
-		fclose(fi);
+//		fclose(fi);
 	}
 }
 
