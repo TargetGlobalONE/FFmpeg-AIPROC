@@ -1,0 +1,8 @@
+* FOR TEST (MJPG PROCESS)
+*
+*
+* NODE:
+
+
+For VIDEO authentication you can use -ocsu and -ocsp 
+or uset credentials on config file
