@@ -10,7 +10,7 @@ slices=4
 vb=2M
 
 #ignored unless using -pass 2
-maxrate=24M
+maxrate=26M
 minrate=100k
 arnr_max_frames=7
 arnr_strength=5
